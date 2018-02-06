@@ -50,10 +50,14 @@ infinity =
   in inf 0
 
 -- functions over List that you may consider using
+
+-- takes a list and replaces :. with the function and Nil with b
 foldRight :: (a -> b -> b) -> b -> List a -> b
 foldRight _ b Nil      = b
 foldRight f b (h :. t) = f h (foldRight f b t)
 
+
+-- basically iterates through and accumulates 
 foldLeft :: (b -> a -> b) -> b -> List a -> b
 foldLeft _ b Nil      = b
 foldLeft f b (h :. t) = let b' = f b h in b' `seq` foldLeft f b' t
@@ -75,8 +79,9 @@ headOr ::
   a
   -> List a
   -> a
-headOr =
-  error "todo: Course.List#headOr"
+headOr _ (h :. _) = h 
+headOr a Nil = a
+
 
 -- | The product of the elements of a list.
 --
@@ -91,8 +96,12 @@ headOr =
 product ::
   List Int
   -> Int
-product =
-  error "todo: Course.List#product"
+-- product Nil = 1 
+-- product (h :. t) = h * product t
+
+-- or 
+product l = foldLeft (*) 1 l
+
 
 -- | Sum the elements of the list.
 --
@@ -106,8 +115,12 @@ product =
 sum ::
   List Int
   -> Int
-sum =
-  error "todo: Course.List#sum"
+-- sum Nil = 0
+-- sum (h :. t) = h + sum t
+
+-- or:
+sum l = foldLeft (+) 0 l
+
 
 -- | Return the length of the list.
 --
@@ -118,8 +131,12 @@ sum =
 length ::
   List a
   -> Int
-length =
-  error "todo: Course.List#length"
+-- length Nil = 0
+-- length (_ :. t) = 1 + length t 
+
+-- or:
+length l = foldLeft (\i _ -> i + 1) 0 l
+
 
 -- | Map the given function on each element of the list.
 --
@@ -133,8 +150,9 @@ map ::
   (a -> b)
   -> List a
   -> List b
-map =
-  error "todo: Course.List#map"
+map _ Nil = Nil
+map f (h :. t) = (f h) :. (map f t)
+
 
 -- | Return elements satisfying the given predicate.
 --
@@ -150,8 +168,20 @@ filter ::
   (a -> Bool)
   -> List a
   -> List a
-filter =
-  error "todo: Course.List#filter"
+filter _ Nil = Nil 
+-- filter f (h :. t) = if f h == True then h :. filter f t else filter f t
+
+-- filter f (h :. t) = case f h of 
+--                       True -> h :. filter f t 
+--                       False -> filter f t
+
+-- filter f (h :. t) = let k = filter f t 
+--                     in case f h of 
+--                       True -> h :. k
+--                       False -> k
+
+filter f (h :. t) = (if f h == True then (h :.) else id) (filter f t)
+
 
 -- | Append two lists to a new list.
 --
@@ -169,8 +199,12 @@ filter =
   List a
   -> List a
   -> List a
-(++) =
-  error "todo: Course.List#(++)"
+-- (++) (h :. t) l = h :. (++) t l
+-- (++) Nil l = l 
+
+-- or:
+(++) l1 l2 = foldRight (:.) l2 l1
+
 
 infixr 5 ++
 
@@ -187,8 +221,15 @@ infixr 5 ++
 flatten ::
   List (List a)
   -> List a
-flatten =
-  error "todo: Course.List#flatten"
+flatten Nil = Nil
+flatten (Nil :. ls) = flatten ls 
+--flatten ((h :. t) :. ls) = h :. flatten (t :. ls)
+flatten (h :. t) = (++) h (flatten t)
+
+--or:
+-- flatten ls = foldRight (++) Nil ls
+
+
 
 -- | Map a function then flatten to a list.
 --
@@ -204,8 +245,13 @@ flatMap ::
   (a -> List b)
   -> List a
   -> List b
-flatMap =
-  error "todo: Course.List#flatMap"
+-- flatMap f l = flatten (map f l)
+-- flatMap f = flatten . (map f) -- uses currying
+-- flatMap f = (.) flatten (map f)
+-- flatMap = (.) flatten . map
+-- flatMap f l = foldRight (++) Nil (map f l)
+flatMap f = foldRight ((++) . f) Nil -- uses currying
+
 
 -- | Flatten a list of lists to a list (again).
 -- HOWEVER, this time use the /flatMap/ function that you just wrote.
@@ -214,8 +260,10 @@ flatMap =
 flattenAgain ::
   List (List a)
   -> List a
-flattenAgain =
-  error "todo: Course.List#flattenAgain"
+flattenAgain l = flatMap id l
+
+-- given:
+  -- error "todo: Course.List#flattenAgain"
 
 -- | Convert a list of optional values to an optional list of values.
 --
@@ -242,8 +290,10 @@ flattenAgain =
 seqOptional ::
   List (Optional a)
   -> Optional (List a)
-seqOptional =
-  error "todo: Course.List#seqOptional"
+seqOptional Nil = Full Nil
+seqOptional (h :. t) = twiceOptional (\a as -> a :. as) h (seqOptional t)
+
+
 
 -- | Find the first element in the list matching the predicate.
 --

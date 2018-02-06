@@ -108,3 +108,11 @@ class ThingsThatMap ttm where
 
 instance ThingsThatMap ExactlyTwo where 
     -- (a -> b) -> ExactlyTwo a -> ExactlyTwo b
+    mapThing = \a2b othername -> case othername of 
+        -- Two a1 a2 -> Two _x _y -- tells you about holes and names them!
+        Two a1 a2 -> Two (a2b a1) (a2b a2)
+
+data ExactlyOne a = One a deriving Show 
+
+instance ThingsThatMap ExactlyOne where 
+    mapThing f (One a) = One (f a)

@@ -27,8 +27,21 @@ mapOptional ::
   (a -> b)
   -> Optional a
   -> Optional b
-mapOptional =
-  error "todo: Course.Optional#mapOptional"
+-- shorthand:
+-- mapOptional f (Full a) = Full (f a)
+-- mapOptional _ Empty = Empty
+
+-- longhand:
+-- mapOptional f optional = case optional of 
+--  (Full a) -> Full (f a)
+--  Empty -> Empty
+
+-- lambda (given answer):
+mapOptional = \f opt -> case opt of
+     Empty -> Empty 
+     Full a -> Full (f a)
+
+  
 
 -- | Bind the given function on the possible value.
 --
@@ -44,8 +57,16 @@ bindOptional ::
   (a -> Optional b)
   -> Optional a
   -> Optional b
-bindOptional =
-  error "todo: Course.Optional#bindOptional"
+
+-- shorthand:
+-- bindOptional f (Full a) = f a
+-- bindOptional _ Empty = Empty
+
+-- lambda form:
+bindOptional = \f opt -> case opt of 
+    Empty -> Empty 
+    Full a -> f a
+
 
 -- | Return the possible value if it exists; otherwise, the second argument.
 --
@@ -58,8 +79,16 @@ bindOptional =
   Optional a
   -> a
   -> a
-(??) =
-  error "todo: Course.Optional#(??)"
+-- shorthand:
+-- (??) (Full a) _  = a
+-- (??) Empty b = b
+
+-- lambda form:
+(??) = \opt b -> case opt of 
+    Empty -> b 
+    Full a -> a
+    
+
 
 -- | Try the first optional for a value. If it has a value, use it; otherwise,
 -- use the second value.
@@ -79,11 +108,20 @@ bindOptional =
   Optional a
   -> Optional a
   -> Optional a
-(<+>) =
-  error "todo: Course.Optional#(<+>)"  
+-- shorthand
+-- (<+>) (Full a) _ = Full a 
+-- (<+>) Empty b = b 
+
+-- lambda form:
+(<+>) = \optA optB -> case (optA, optB) of 
+    (Full a, _) -> Full a 
+    (Empty, b) -> b -- if the firt is Empty, return the second arg regardless
+
+      
 
 applyOptional :: Optional (a -> b) -> Optional a -> Optional b
 applyOptional f a = bindOptional (\f' -> mapOptional f' a) f
+-- take f and bind it to get map f a, returns an Optional (map f a)
 
 twiceOptional :: (a -> b -> c) -> Optional a -> Optional b -> Optional c
 twiceOptional f = applyOptional . mapOptional f
