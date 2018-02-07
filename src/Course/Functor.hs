@@ -90,6 +90,8 @@ instance Functor ((->) t) where
   (<$>) f a = (\x -> f (a x))
   --or to cheat:
   -- (<$>) f x = f . x
+  --or given answer using lambdas:
+  -- (<$>) = \a2b t2a t -> a2b (t2a t)
 
 
 
@@ -106,8 +108,12 @@ instance Functor ((->) t) where
   a
   -> f b
   -> f a
+--my solution and given answer:
 -- (<$) a f = (<$>) (const a) f
-(<$) a = (<$>) (const a) -- using currying
+--or using currying:
+(<$) a = (<$>) (const a) 
+--or using lambda:
+-- (<$) = \a -> (<$>) (const a)
 
 
 
@@ -129,7 +135,8 @@ void ::
   f a
   -> f ()
 -- void f = (<$) () f
-void = (<$) () -- using currying
+--or using currying - given solution:
+void = (<$) () 
 
 
 
@@ -139,7 +146,7 @@ void = (<$) () -- using currying
 
 -- | Maps a function on an IO program.
 --
--- >>> reverse <$> (putStr "hi" P.>> P.return ("abc" :: List Char))
+-- >>> reverse <$> (putStr "hi" P.>> P.returns ("abc" :: List Char))
 -- hi"cba"
 instance Functor IO where
   (<$>) =
