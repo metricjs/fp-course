@@ -291,8 +291,32 @@ seqOptional ::
   List (Optional a)
   -> Optional (List a)
 seqOptional Nil = Full Nil
-seqOptional (h :. t) = twiceOptional (\a as -> a :. as) h (seqOptional t)
+-- seqOptional (h :. t) = twiceOptional (\a as -> a :. as) h (seqOptional t)
+seqOptional (h :. t) = twiceOptional (:.) h (seqOptional t)
 
+--or, to pull it apart:
+-- seqOptional Nil = Full Nil
+-- seqOptional (h :. t) = (/a as -> case a of 
+--   Empty -> Empty 
+--   Full aa -> case as of 
+--     Empty -> Empty 
+--     Full aas -> Full (aa :. aas)
+-- ) h (seqOptional t)
+
+--but the inner case is essentially Optional.mapOptional so let's use that:
+-- seqOptional Nil = Full Nil
+-- seqOptional (h :. t) = (/a as -> case a of 
+--   Empty -> Empty 
+--   Full aa -> mapOptional (aa :.) as) h (seqOptional t) 
+
+--but the inner case there is just Optional.bindOptional, so let's use that too:
+-- seqOptional Nil = Full Nil
+-- seqOptional (h :. t) = bindOptional (\aa -> mapOptional (\aas -> aa :. aas) (seqOptional t)) h 
+
+-- but bindOptional + mapOptional is Optional.applyOptional, so we can sub that.
+-- and where we have two Options, we want to grab the values if they exist, 
+-- act on them, and return an Option of the result, we want twiceOptional 
+-- so combine all that to get the answer above
 
 
 -- | Find the first element in the list matching the predicate.
@@ -337,6 +361,8 @@ lengthGT4 ::
 lengthGT4 =
   error "todo: Course.List#lengthGT4"
 
+
+
 -- | Reverse a list.
 --
 -- >>> reverse Nil
@@ -351,8 +377,10 @@ lengthGT4 =
 reverse ::
   List a
   -> List a
-reverse =
-  error "todo: Course.List#reverse"
+-- reverse l = foldLeft (\i x -> x :. i) Nil l
+reverse = foldLeft (flip (:.)) Nil
+
+
 
 -- | Produce an infinite `List` that seeds with the given value at its head,
 -- then runs the given function for subsequent elements
@@ -368,6 +396,8 @@ produce ::
   -> List a
 produce f x = x :. produce f (f x)
 
+
+
 -- | Do anything other than reverse a list.
 -- Is it even possible?
 --
@@ -382,6 +412,10 @@ notReverse ::
   -> List a
 notReverse =
   error "todo: Is it even possible?"
+-- ANSWER IS NO
+
+
+  
 
 ---- End of list exercises
 
