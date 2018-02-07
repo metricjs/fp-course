@@ -1,3 +1,7 @@
+This repo is my attempt at the Data61 FP Course. I haven't touched any files but this readme and the exercise files. All credit goes to the original authors. I intend to fork this instead sometime, but for now this is my temporary repo.
+
+---
+
 # Functional Programming Course
 
 ![Data61](http://i.imgur.com/0h9dFhl.png)
