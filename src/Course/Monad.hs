@@ -159,7 +159,11 @@ join = (=<<) id -- to use currying
   f a
   -> (a -> f b)
   -> f b
-(>>=) fa a2fb = (=<<) a2fb fa
+-- (>>=) fa a2fb = (=<<) a2fb fa
+--or:
+-- (>>=) = flip (=<<)
+--or:
+(>>=) fa a2fb = undefined -- ?????
 
 infixl 1 >>=
 
@@ -176,7 +180,8 @@ infixl 1 >>=
   -> (a -> f b)
   -> a
   -> f c
-(<=<) b2fc a2fb a = (=<<) b2fc (a2fb a)
+-- (<=<) b2fc a2fb a = (=<<) b2fc (a2fb a)
+(<=<) f g x = (=<<) f (g x)
 
 infixr 1 <=<
 
