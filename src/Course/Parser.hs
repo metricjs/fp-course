@@ -342,11 +342,17 @@ satisfy ::
   -> Parser Char
 -- satisfy f = character >>= \c -> bool (unexpectedCharParser c) (pure c) (f c)
 -- satisfy f = character >>= \c -> ((bool unexpectedCharParser pure) =<< (f)) c
-satisfy f = character >>= ((bool unexpectedCharParser pure) =<< (f))
+-- satisfy f = character >>= ((bool unexpectedCharParser pure) =<< (f))
 --notes on types (deconstruction):
 -- f :: (->) Char Bool
 -- bool unexpectedCharParser pure :: Bool -> (->) Char (Parser Char)
 -- =<< :: (Bool -> (->) Char (Parser Char)) -> (->) Char Bool -> (->) Char (Parser Char)
+
+-- satisfy f = character >>= (f >>= (bool unexpectedCharParser pure))
+-- satisfy f = character >>= (f >>= (bool unexpectedCharParser pure)) -- lift gdi
+
+--given answer:
+satisfy f = character >>= lift3 bool unexpectedCharParser pure f
 
 -- notes:
 -- data Parser a = P (Input -> ParseResult a)
@@ -459,9 +465,15 @@ sequenceParser (h:.t) =
   -- pure (a:.b)))
 --in do notation:
   do
-    a                <- h
+    a <- h
     b <- sequenceParser t
     pure (a:.b)
+--notes: because a and b are only on the left side of the arrows, we can use applicative something???
+--means we can use lift though, and the number is the number of arrows
+--so lift2 here
+  --or:
+  -- (:.) <$> h <*> sequenceParser t
+
 
 
 -- | Return a parser that produces the given number of values off the given parser.
@@ -478,8 +490,14 @@ thisMany ::
   Int
   -> Parser a
   -> Parser (List a)
-thisMany =
-  error "todo: Course.Parser#thisMany"
+-- thisMany = \n p -> sequenceParser (replicate n p)
+--replicate n p :: List (Parse a)
+--note: to point-free:
+-- \n -> sequenceParser . replicate n
+--which becomes:
+thisMany = (sequenceParser . ) . replicate
+
+
 
 -- | This one is done for you.
 --
@@ -511,8 +529,18 @@ ageParser =
 -- True
 firstNameParser ::
   Parser Chars
-firstNameParser =
-  error "todo: Course.Parser#firstNameParser"
+firstNameParser = 
+  -- do 
+  --   a <- satisfy alpha h
+  --   b <- t satisfy
+  -- upper >>= (\u -> 
+  -- list lower >>= (\l ->
+  -- pure (u:.l)))
+--or:
+  lift2 (:.) (upper) (list lower)
+
+
+
 
 -- | Write a parser for Person.surname.
 --
@@ -533,8 +561,16 @@ firstNameParser =
 -- True
 surnameParser ::
   Parser Chars
-surnameParser =
-  error "todo: Course.Parser#surnameParser"
+surnameParser = 
+  -- upper >>= (\u -> 
+  -- thisMany 5 lower >>= (\v -> 
+  -- list lower >>= (\w -> 
+  -- pure (u :. v ++ w) )))
+  -- lift3 (\u v w -> u :. v ++ w) upper (thisMany 5 lower) (list lower)
+  lift3 (((++) .) . (:.)) upper (thisMany 5 lower) (list lower)
+  
+
+
 
 -- | Write a parser for Person.smoker.
 --
@@ -552,8 +588,10 @@ surnameParser =
 -- True
 smokerParser ::
   Parser Char
-smokerParser =
-  error "todo: Course.Parser#smokerParser"
+smokerParser = is 'y' ||| is 'n'
+
+
+
 
 -- | Write part of a parser for Person#phoneBody.
 -- This parser will only produce a string of digits, dots or hyphens.
@@ -574,8 +612,11 @@ smokerParser =
 -- Result >a123-456< ""
 phoneBodyParser ::
   Parser Chars
-phoneBodyParser =
-  error "todo: Course.Parser#phoneBodyParser"
+phoneBodyParser = list (digit ||| is '-' ||| is '.')
+
+
+
+
 
 -- | Write a parser for Person.phone.
 --
@@ -596,8 +637,21 @@ phoneBodyParser =
 -- True
 phoneParser ::
   Parser Chars
-phoneParser =
-  error "todo: Course.Parser#phoneParser"
+phoneParser = 
+  -- digit >>= (\b -> 
+  -- phoneBodyParser >>= (\c -> 
+  -- is '#' >>= (\_ -> 
+  -- pure (b :. c))))
+--or:
+  -- (\d b -> d :. b) <$>
+--becomes:
+  (:.) <$>
+  digit <*>
+  phoneBodyParser <* -- we don't care about the hash value, so we remove the wing from <*>
+  is '#'
+
+
+
 
 -- | Write a parser for Person.
 --
@@ -613,43 +667,43 @@ phoneParser =
 --
 -- >>> isErrorResult (parse personParser "")
 -- True
---
 -- >>> isErrorResult (parse personParser "12x Fred Clarkson y 123-456.789#")
 -- True
---
 -- >>> isErrorResult (parse personParser "123 fred Clarkson y 123-456.789#")
 -- True
---
 -- >>> isErrorResult (parse personParser "123 Fred Cla y 123-456.789#")
 -- True
---
 -- >>> isErrorResult (parse personParser "123 Fred clarkson y 123-456.789#")
 -- True
---
 -- >>> isErrorResult (parse personParser "123 Fred Clarkson x 123-456.789#")
 -- True
---
 -- >>> isErrorResult (parse personParser "123 Fred Clarkson y 1x3-456.789#")
 -- True
---
 -- >>> isErrorResult (parse personParser "123 Fred Clarkson y -123-456.789#")
 -- True
---
 -- >>> isErrorResult (parse personParser "123 Fred Clarkson y 123-456.789")
 -- True
---
 -- >>> parse personParser "123 Fred Clarkson y 123-456.789#"
 -- Result >< Person {age = 123, firstName = "Fred", surname = "Clarkson", smoker = 'y', phone = "123-456.789"}
---
 -- >>> parse personParser "123 Fred Clarkson y 123-456.789# rest"
--- Result > rest< Person {age = 123, firstName = "Fred", surname = "Clarkson", smoker = 'y', phone = "123-456.789"}
---
+-- Result > rest< Person {age = 123, firstName = "Fred", surname = "Clarkson", smoker = 'y', phone = "123-456.789"}--
 -- >>> parse personParser "123  Fred   Clarkson    y     123-456.789#"
 -- Result >< Person {age = 123, firstName = "Fred", surname = "Clarkson", smoker = 'y', phone = "123-456.789"}
 personParser ::
   Parser Person
-personParser =
-  error "todo: Course.Parser#personParser"
+personParser = 
+  -- (\a f l s p -> Person a f l s p) <$>
+  Person <$>
+  ageParser <*
+  spaces1 <*>
+  firstNameParser <*
+  spaces1 <*>
+  surnameParser <*
+  spaces1 <*>
+  smokerParser <*
+  spaces1 <*>
+  phoneParser
+
 
 -- Make sure all the tests pass!
 
