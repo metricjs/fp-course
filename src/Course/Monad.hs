@@ -159,11 +159,11 @@ join = (=<<) id -- to use currying
   f a
   -> (a -> f b)
   -> f b
--- (>>=) fa a2fb = (=<<) a2fb fa
+(>>=) fa a2fb = (=<<) a2fb fa
 --or:
 -- (>>=) = flip (=<<)
 --or:
-(>>=) fa a2fb = undefined -- ?????
+-- (>>=) fa a2fb = undefined -- ?????
 
 infixl 1 >>=
 

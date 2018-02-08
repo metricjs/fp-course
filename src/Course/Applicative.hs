@@ -306,7 +306,7 @@ lift1 f fa = (<*>) (lift0 f) fa
   f a
   -> f b
   -> f b
-(*>) _ = id -- uses currying and ignores fa
+(*>) = lift2 (const id) -- uses currying and ignores fa
 
 
 -- | Apply, discarding the value of the second argument.
